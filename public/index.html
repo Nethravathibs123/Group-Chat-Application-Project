@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room</title>
+</head>
+<body>
+    <div id="messages">No chat exists.</div> <!-- Default message -->
+
+    <form id="messageForm">
+        <input type="text" name="message" placeholder="Type your message here..." required>
+        <br>
+        <button type="submit">Send</button>
+    </form>
+
+    <script>
+        let lastUsername = ''; // To track the last displayed username
+
+        async function fetchMessages() {
+            const response = await fetch('/messages');
+            const messages = await response.json();
+            const messagesContainer = document.getElementById('messages');
+            messagesContainer.innerHTML = ''; // Clear previous messages
+
+            if (messages.length === 0) {
+                messagesContainer.textContent = 'No chat exists.'; // Show default message
+            } else {
+                messages.forEach(msg => {
+                    if (msg.username !== lastUsername) {
+                        lastUsername = msg.username; // Update lastUsername
+                    }
+                    messagesContainer.innerHTML += `:${msg.message} `;
+                });
+                messagesContainer.innerHTML += '<br>'; // Line break after each message set
+            }
+        }
+
+        document.getElementById('messageForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const messageInput = event.target.elements.message;
+            const message = messageInput.value;
+            const username = localStorage.getItem('username'); // Get username from localStorage
+
+            // Send message to the server
+            await fetch('/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, message }),
+            });
+
+            messageInput.value = ''; // Clear input after sending
+            fetchMessages(); // Refresh messages
+        });
+
+        fetchMessages(); // Initial fetch of messages
+    </script>
+</body>
+</html>
